@@ -5,7 +5,7 @@
 Recomendaciones de películas y series, tiempo, aplicaciones favoritas y cambio de entradas, en una interfaz en español y sin efectos de desenfoque costosos.
 
 [![Licencia: MIT](https://img.shields.io/badge/licencia-MIT-blue.svg)](LICENSE)
-![Versión](https://img.shields.io/badge/versi%C3%B3n-0.2.1-356ac3)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-0.2.2-356ac3)
 [![Pruebas](https://github.com/siskomatico/lg_webos/actions/workflows/test.yml/badge.svg)](https://github.com/siskomatico/lg_webos/actions/workflows/test.yml)
 ![Estado](https://img.shields.io/badge/estado-experimental-orange)
 
@@ -99,7 +99,7 @@ Los recursos importados se guardan en `ui/icons/` y `ui/icons.local.json`, **exc
 python3 scripts/build_custom.py
 ```
 
-Se genera `dist/org.kagev.inicio_0.2.1_all.ipk`. El ID predeterminado de la app es `org.kagev.inicio`.
+Se genera `dist/org.kagev.inicio_0.2.2_all.ipk`. El ID predeterminado de la app es `org.kagev.inicio`.
 
 Puedes indicar otra configuración privada:
 
@@ -156,7 +156,7 @@ python3 scripts/build_custom.py --config config.example.json
 npm test
 ```
 
-Las pruebas de escritorio usan servicios, credenciales e iconos ficticios. No necesitan una TV ni ejecutan un apagado real. Cubren las dos pantallas, el carrusel, proveedores, caché, navegación, edición/persistencia del estante y confirmación de apagado.
+Las pruebas de escritorio sirven la app por HTTP exclusivamente en loopback, con un origen estable para comprobar la persistencia. Nunca sirven tu archivo de configuración privado. Usan servicios, credenciales e iconos ficticios. No necesitan una TV ni ejecutan un apagado real. Cubren las dos pantallas, el carrusel, proveedores, caché, navegación, edición/persistencia del estante y confirmación de apagado.
 
 Las capturas e informes de prueba se escriben en `research/`, excluido de Git.
 

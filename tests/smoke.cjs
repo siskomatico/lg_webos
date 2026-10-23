@@ -5,9 +5,10 @@ const root=path.resolve(__dirname,'..'),metadata=require('../ui/icons.json');
 for(const app of Object.values(metadata))app.icon='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192"><rect width="192" height="192" rx="24" fill="#3869a8"/><circle cx="96" cy="96" r="48" fill="#fff"/></svg>');
 // Additional mock apps exercise overflow without depending on a person's inventory.
 const expectedApps=Object.keys(metadata).length-1+8;
-let browser;
+let browser,server;
 (async()=>{
  fs.mkdirSync(root+'/research',{recursive:true,mode:0o700});
+ server=await require('./server.cjs').start(root+'/app');
  browser=await playwright.chromium.launch({headless:true});
  const page=await browser.newPage({viewport:{width:1920,height:1080}}),errors=[],requests=[];
  page.on('pageerror',e=>errors.push(e.message));
@@ -41,7 +42,7 @@ let browser;
  });
  await page.route('https://image.tmdb.org/**',route=>route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="780" height="480"><defs><linearGradient id="g"><stop stop-color="#29384e"/><stop offset="1" stop-color="#896f5b"/></linearGradient></defs><rect width="780" height="480" fill="url(#g)"/></svg>'}));
  await page.route('https://api.open-meteo.com/**',route=>route.fulfill({json:{current:{temperature_2m:20,weather_code:2,is_day:1},daily:{sunrise:['2026-10-23T08:15'],sunset:['2026-10-23T19:11']}}}));
- await page.goto('file://'+root+'/app/index.html');
+ await page.goto(server.url+'/index.html');
  await page.waitForFunction(count=>Inicio.view.picks.length===16&&Inicio.view.apps.length===count,expectedApps);
  assert.equal(await page.locator('#temperature').innerText(),'20°C');
  assert.equal(await page.evaluate(()=>Inicio.view.prefs.theme),'light','Legacy day theme migrates to light');
@@ -110,5 +111,5 @@ let browser;
  assert.equal(await page.evaluate(()=>__commands.filter(c=>c==='/bin/systemctl --no-block poweroff').length),1);
  assert.equal(errors.length,0,errors.join('\n'));
  console.log(JSON.stringify({result:'PASS',checks:['two screens','shared weather/clock/live/settings header','10 movies + 6 series','ES providers','manual carousel','automatic carousel and focus pause','official local icons','three physical HDMI inputs','all-app grid scrolling','first-app-style shelf toggling/reordering','persistent preferences','cache','live TV launch','no unconfirmed poweroff','poweroff only after explicit confirmation in MOCK'],rendererErrors:errors.length,providerLookups:requests.filter(p=>p.endsWith('/watch/providers')).length},null,2));
- await browser.close();
-})().catch(async error=>{console.error(error);if(browser)await browser.close();process.exitCode=1;});
+ await browser.close();await server.close();
+})().catch(async error=>{console.error(error);if(browser)await browser.close();if(server)await server.close();process.exitCode=1;});
