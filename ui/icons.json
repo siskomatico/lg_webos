@@ -1,0 +1,123 @@
+{
+  "amazon": {
+    "title": "Prime Video",
+    "color": "#0578ff",
+    "icon": "icons/amazon.png"
+  },
+  "amazon.alexa.view": {
+    "title": "Amazon Alexa",
+    "color": "#ffffff",
+    "icon": "icons/amazon.alexa.view.png"
+  },
+  "com.amazoff.patcher": {
+    "title": "AmazOff",
+    "color": "#000000",
+    "icon": "icons/com.amazoff.patcher.png"
+  },
+  "com.disney.disneyplus-prod": {
+    "title": "Disney+",
+    "color": "#054553",
+    "icon": "icons/com.disney.disneyplus-prod.png"
+  },
+  "com.limelight.webos": {
+    "title": "Moonlight",
+    "color": "#ffffff",
+    "icon": "icons/com.limelight.webos.png"
+  },
+  "com.miniclip.eightballpool": {
+    "title": "8 Ball Pool",
+    "color": "#2143b0",
+    "icon": "icons/com.miniclip.eightballpool.png"
+  },
+  "com.wbd.stream": {
+    "title": "HBO Max",
+    "color": "#00030c",
+    "icon": "icons/com.wbd.stream.png"
+  },
+  "com.webos.app.browser": {
+    "title": "Navegador web",
+    "color": "#FFFFFF",
+    "icon": "icons/com.webos.app.browser.png"
+  },
+  "com.webos.app.discovery": {
+    "title": "Apps",
+    "color": "#ffffff",
+    "icon": "icons/com.webos.app.discovery.png"
+  },
+  "com.webos.app.homeconnect": {
+    "title": "Panel de casa",
+    "color": "#ffffff",
+    "icon": "icons/com.webos.app.homeconnect.png"
+  },
+  "com.webos.app.lgchannels": {
+    "title": "LG Channels",
+    "color": "#FD312E",
+    "icon": "icons/com.webos.app.lgchannels.png"
+  },
+  "com.webos.app.mediadiscovery": {
+    "title": "Reproductor multimedia",
+    "color": "#ffffff",
+    "icon": "icons/com.webos.app.mediadiscovery.png"
+  },
+  "com.webos.app.sportsteamsettings": {
+    "title": "Alertas de deportes",
+    "color": "#ffffff",
+    "icon": "icons/com.webos.app.sportsteamsettings.png"
+  },
+  "io.strem.tv": {
+    "title": "Stremio",
+    "color": "#100f1f",
+    "icon": "icons/io.strem.tv.png"
+  },
+  "netflix": {
+    "title": "Netflix",
+    "color": "#ffffff",
+    "icon": "icons/netflix.png"
+  },
+  "org.kagev.inicio": {
+    "title": "Inicio LG · Personalizado",
+    "color": "#0a84ff",
+    "icon": "icons/org.kagev.inicio.png"
+  },
+  "org.webosbrew.hbchannel": {
+    "title": "Homebrew Channel",
+    "color": "#cf0652",
+    "icon": "icons/org.webosbrew.hbchannel.png"
+  },
+  "org.webosbrew.inputhook": {
+    "title": "LG Input Hook",
+    "color": "#0C0C0C",
+    "icon": "icons/org.webosbrew.inputhook.png"
+  },
+  "org.webosbrew.safeupdate": {
+    "title": "Homebrew Channel Updater",
+    "color": "#ff7300",
+    "icon": "icons/org.webosbrew.safeupdate.png"
+  },
+  "org.webosbrew.vncserver": {
+    "title": "VNCServer",
+    "color": "#ffb80d",
+    "icon": "icons/org.webosbrew.vncserver.png"
+  },
+  "rtve.smarttv.alacarta.pro": {
+    "title": "RTVE.es Play",
+    "color": "#000000",
+    "icon": "icons/rtve.smarttv.alacarta.pro.png"
+  },
+  "twitch.adamffdev.v1": {
+    "title": "Twitch AdFree",
+    "color": "#000000",
+    "icon": "icons/twitch.adamffdev.v1.png"
+  },
+  "webos.day": {
+    "title": "LG Streaming Week",
+    "color": "#fd322e",
+    "icon": "icons/webos.day.png"
+  },
+  "youtube.leanback.v4": {
+    "title": "YouTube AdFree",
+    "color": "#ff0000",
+    "icon": "assets/brands/youtube.svg",
+    "brand": true
+  }
+}

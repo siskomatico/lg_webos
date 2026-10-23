@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Inicio LG</title><link rel="stylesheet" href="inicio.css">
+<script src="webOSTV.js"></script><script src="private-config.js"></script>
+</head>
+<body>
+<main id="app">
+<header>
+<button id="weather" class="weather" aria-label="El tiempo" data-zone="header"><span id="weatherIcon">☀</span><span><strong id="temperature">—°</strong><span id="weatherCity">Valencia</span></span><span id="weatherDescription">Consultando el tiempo…</span></button>
+<div class="clock"><time id="clock">--:--</time><div id="date"></div></div>
+<div class="headerActions"><button id="live" class="headerButton" data-zone="header"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="11" width="38" height="27" rx="5"/><path d="m16 4 8 7 8-7M17 44h14"/></svg><span>TV en vivo</span></button><button id="settings" class="headerButton gear" data-zone="header" aria-label="Ajustes"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="m20 4-2 6-5 3-6-1-4 7 4 5v6l-4 5 4 7 6-1 5 3 2 6h8l2-6 5-3 6 1 4-7-4-5v-6l4-5-4-7-6 1-5-3-2-6z" transform="translate(2 -2) scale(.92)"/><circle cx="24" cy="24" r="8"/></svg></button></div>
+</header>
+<section id="page1" class="screen">
+<div class="sectionHeading"><span>PARA VER HOY</span><span id="recommendationInfo">Películas y series · España</span></div>
+<div id="carousel" class="carousel" aria-label="Recomendaciones de películas y series"></div>
+<div class="shelfHeading"><span>TU ESTANTE</span><span id="carouselHint">← → Explora las recomendaciones</span></div>
+<div id="shelf" class="shelf" aria-label="Aplicaciones favoritas"></div>
+<button id="nextPage" class="pageLink" aria-label="Ver entradas y todas las aplicaciones">↓ &nbsp; Entradas y todas las aplicaciones</button>
+</section>
+<section id="page2" class="screen" hidden>
+<div class="sectionHeading"><span>ENTRADAS</span><span>Atrás vuelve al inicio</span></div>
+<div id="inputs" class="inputs"></div>
+<div class="allHeading"><span>TODAS TUS APLICACIONES</span><span id="appCount"></span></div>
+<div id="allApps" class="allApps" aria-label="Todas las aplicaciones"></div>
+</section>
+<div class="pageNumber" id="pageNumber">1 / 2</div>
+<div id="overlay" class="overlay" hidden><section id="dialog" class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle"><h1 id="dialogTitle"></h1><div id="dialogList" class="dialogList"></div><p id="dialogHint"></p></section></div>
+<div id="toast" role="status" hidden></div>
+</main>
+<script src="icons.js"></script><script src="platform.js"></script><script src="recommendations.js"></script><script src="inicio.js"></script>
+</body></html>

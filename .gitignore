@@ -1,0 +1,33 @@
+# Generated packages include local credentials. Never commit or attach them to releases.
+/app/
+/dist/
+/out/
+*.ipk
+
+# Private configuration and device state
+/config.local.json
+/config.*.local.json
+.env
+.env.*
+*.pem
+*.key
+*localStorage*.json
+/research/
+/integration/
+/README.local.md
+# Artwork extracted from a user's installed apps is not distributed.
+/ui/icons/
+/ui/icons.local.json
+
+# Local-only recovery and historical experiments (not needed to build)
+/scripts/revert.py
+/scripts/es.json
+/scripts/inicio.css
+/scripts/discovery.js
+/tests/tv-cdp.cjs
+/upstream/app/index.html
+
+node_modules/
+__pycache__/
+*.pyc
+*.log
