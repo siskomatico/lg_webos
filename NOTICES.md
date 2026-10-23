@@ -17,6 +17,7 @@ No es código original de Inicio LG y no se relicencia como MIT.
 
 - Los assets originales del launcher conservados de FreeMyTvWebOS se mantienen junto con su aviso MIT.
 - Los SVG de Simple Icons conservados en `upstream/app/assets/brands/` mantienen sus fuentes y texto CC0 en `SOURCES.md` y `SIMPLE-ICONS-LICENSE.md`.
+- Los logotipos tipográficos de Disney+ y Globoplay de ese directorio proceden de Wikimedia Commons (PD-textlogo), según las fuentes conservadas en `SOURCES.md`. No se declaran CC0 ni se transfieren derechos de marca.
 - Las marcas representadas pertenecen a sus titulares. Sus nombres e iconos se utilizan para identificar aplicaciones; no implican afiliación ni patrocinio.
 - **No se redistribuyen los iconos extraídos de paquetes de apps comerciales o de terceros instalados en una TV.** La herramienta de importación opcional guarda esos recursos localmente y quedan excluidos de Git. Cada usuario debe respetar sus condiciones originales.
 - Las capturas de `docs/images/` ilustran la interfaz real. Pueden mostrar logotipos, títulos y carátulas de terceros, cuyos derechos no se transfieren ni se relicencian bajo MIT. No constituyen un paquete de recursos gráficos para su reutilización independiente.

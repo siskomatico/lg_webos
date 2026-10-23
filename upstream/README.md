@@ -19,6 +19,6 @@
 
 ## Iconos de marcas
 
-Los SVG conservados en `app/assets/brands/` mantienen sus avisos de Simple Icons (CC0) y fuentes en ese directorio. Las marcas pertenecen a sus titulares; CC0 no concede derechos de marca ni implica patrocinio.
+Los SVG de Simple Icons conservados en `app/assets/brands/` mantienen su aviso CC0. Los logotipos tipográficos de Disney+ y Globoplay proceden de Wikimedia Commons y están identificados como PD-textlogo en `SOURCES.md`; no se declaran CC0. Las fuentes y condiciones se conservan en ese directorio. Las marcas pertenecen a sus titulares: ni CC0 ni PD-textlogo conceden derechos de marca o implican patrocinio.
 
 No se distribuyen aquí los iconos extraídos de aplicaciones instaladas en un televisor. La herramienta opcional `scripts/import_icons.py` permite obtenerlos de un dispositivo propio y los guarda en archivos ignorados por Git.
