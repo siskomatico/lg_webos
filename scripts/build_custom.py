@@ -9,7 +9,7 @@ import shutil
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 APP = ROOT / 'app'
 APP_ID = 'org.kagev.inicio'
-VERSION = '0.2.0'
+VERSION = '0.2.1'
 
 
 def build(config_path=None):

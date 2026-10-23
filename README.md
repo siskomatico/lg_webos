@@ -5,7 +5,8 @@
 Recomendaciones de películas y series, tiempo, aplicaciones favoritas y cambio de entradas, en una interfaz en español y sin efectos de desenfoque costosos.
 
 [![Licencia: MIT](https://img.shields.io/badge/licencia-MIT-blue.svg)](LICENSE)
-![Versión](https://img.shields.io/badge/versi%C3%B3n-0.2.0-356ac3)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-0.2.1-356ac3)
+[![Pruebas](https://github.com/siskomatico/lg_webos/actions/workflows/test.yml/badge.svg)](https://github.com/siskomatico/lg_webos/actions/workflows/test.yml)
 ![Estado](https://img.shields.io/badge/estado-experimental-orange)
 
 ![Pantalla principal de Inicio LG: tiempo, reloj, carrusel mixto y aplicaciones favoritas](docs/images/inicio.png)
@@ -98,7 +99,7 @@ Los recursos importados se guardan en `ui/icons/` y `ui/icons.local.json`, **exc
 python3 scripts/build_custom.py
 ```
 
-Se genera `dist/org.kagev.inicio_0.2.0_all.ipk`. El ID predeterminado de la app es `org.kagev.inicio`.
+Se genera `dist/org.kagev.inicio_0.2.1_all.ipk`. El ID predeterminado de la app es `org.kagev.inicio`.
 
 Puedes indicar otra configuración privada:
 

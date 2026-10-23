@@ -85,6 +85,9 @@ let browser;
  const original=await page.evaluate(()=>Inicio.view.prefs.favorites.slice());
  await page.keyboard.press('ArrowRight');
  assert.equal(await page.evaluate(()=>Inicio.view.prefs.favorites[1]),original[0]);
+ // DOM replacement beneath an idle pointer must not steal the keyboard's selected app.
+ await page.locator('.settingRow').nth(4).dispatchEvent('mouseenter');
+ assert.equal(await page.evaluate(()=>document.activeElement.getAttribute('aria-label')),metadata[original[0]].title);
  await page.keyboard.press('Enter');assert.equal(await page.evaluate(id=>Inicio.view.prefs.favorites.includes(id),original[0]),false);
  assert.equal(await page.evaluate(()=>Inicio.view.prefs.favorites.length),7);
  await page.keyboard.press('Enter');assert.equal(await page.evaluate(()=>Inicio.view.prefs.favorites.length),8);

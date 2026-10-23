@@ -16,6 +16,7 @@
         unit:saved.unit==='F'?'F':'C',weather:saved.weather!==false,city:typeof saved.city==='string'?saved.city:(localStorage.getItem('fmtv_city')||INICIO_CONFIG.city),
         autoRotate:saved.autoRotate!==false,rotation:[8,12,20].indexOf(saved.rotation)>=0?saved.rotation:12};
     var view=api.view={page:1,dialog:'',apps:[],inputs:[],picks:[],start:0,prefs:prefs};
+    var pointerX=null,pointerY=null;
     var active=null,dialogRows=[],dialogIndex=0,returnIndex=0,toastTimer,lastInteraction=Date.now(),lastRotation=Date.now(),weatherBusy=false,weatherData=null,weatherAt=0,pendingLaunch=false;
     function persist(){try{localStorage.setItem('inicio.prefs.v2',JSON.stringify(prefs));}catch(error){toast('No se han podido guardar los cambios.');}}
     function toast(text){$('toast').textContent=text;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(function(){$('toast').hidden=true;},5000);}
@@ -30,11 +31,17 @@
         if(node.dataset.zone==='all'||node.dataset.zone==='dialog')node.scrollIntoView({block:'nearest',inline:'nearest'});
         if(node.dataset.zone==='dialog')dialogIndex=Number(node.dataset.index);
     }
+    function pointerFocus(node,event){
+        // A redraw beneath a stationary pointer must not override D-pad selection.
+        if(event.clientX===pointerX&&event.clientY===pointerY)return;
+        pointerX=event.clientX;pointerY=event.clientY;
+        if(!view.dialog||node.dataset.zone==='dialog')focus(node);
+    }
     function focusZone(zone,index){var list=nodes(zone);if(!list.length&&zone!=='header')list=nodes('header');focus(list[Math.max(0,Math.min(list.length-1,index||0))]);}
     function button(parent,zone,index,label,run,className){
         var b=document.createElement('button');b.type='button';b.className=className||'';b.dataset.zone=zone;b.dataset.index=index;b.setAttribute('aria-label',label);
         b.addEventListener('focus',function(){if(active!==b)focus(b);});
-        b.addEventListener('mouseenter',function(){if(!view.dialog||zone==='dialog')focus(b);});
+        b.addEventListener('mousemove',function(event){pointerFocus(b,event);});
         b.addEventListener('click',function(){lastInteraction=Date.now();focus(b);run();});parent.appendChild(b);return b;
     }
     function icon(parent,app){
@@ -254,7 +261,7 @@
         if(code>=37&&code<=40){event.preventDefault();move(code===37?-1:code===39?1:0,code===38?-1:code===40?1:0);}
     });
     $('settings').addEventListener('click',function(){openSettings();});$('live').addEventListener('click',function(){launch('com.webos.app.livetv');});$('weather').addEventListener('click',showWeather);$('nextPage').addEventListener('click',function(){setPage(2);});
-    nodes('header').forEach(function(b,i){b.dataset.index=i;b.addEventListener('mouseenter',function(){if(!view.dialog)focus(b);});b.addEventListener('focus',function(){if(!view.dialog&&active!==b)focus(b);});});
+    nodes('header').forEach(function(b,i){b.dataset.index=i;b.addEventListener('mousemove',function(event){pointerFocus(b,event);});b.addEventListener('focus',function(){if(!view.dialog&&active!==b)focus(b);});});
     function resize(){var scale=Math.min(innerWidth/1920,innerHeight/1080);$('app').style.transform='scale('+scale+')';}
     window.addEventListener('resize',resize);resize();
     // A saved snapshot is used only until the TV returns its actual installed list.
