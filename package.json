@@ -1,6 +1,6 @@
 {
   "name": "inicio-lg-local",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "private": true,
   "license": "MIT",
   "description": "Local build and smoke tests for a personal LG webOS launcher",

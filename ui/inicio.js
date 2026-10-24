@@ -4,6 +4,7 @@
     var defaults=['amazon','com.disney.disneyplus-prod','io.strem.tv','youtube.leanback.v4','com.wbd.stream','com.amazoff.patcher','twitch.adamffdev.v1','netflix'];
     function glyph(name){
         var paths={sun:'<circle cx="24" cy="24" r="10"/><path d="M24 3v6m0 30v6M3 24h6m30 0h6M9 9l5 5m20 20 5 5M9 39l5-5m20-20 5-5"/>',moon:'<path d="M39 28A18 18 0 1 1 20 9a14 14 0 0 0 19 19z"/>',cloud:'<path d="M12 35a9 9 0 1 1 3-17 12 12 0 0 1 23 3 7 7 0 0 1-1 14z"/>',hdmi:'<path d="M8 10h32v19L32 39H16L8 29zM15 17h18M16 24v5m8-5v5m8-5v5"/>',tv:'<rect x="5" y="10" width="38" height="27" rx="4"/><path d="M17 44h14M15 3l9 7 9-7"/>'};
+        paths.rain=paths.cloud+'<path d="m15 39-3 6m13-6-3 6m13-6-3 6"/>';paths.snow=paths.cloud+'<path d="M16 39v8m-4-4h8m12-4v8m-4-4h8"/>';paths.storm=paths.cloud+'<path d="m25 31-7 10h7l-4 7"/>';
         return '<svg viewBox="0 0 48 48" aria-hidden="true">'+paths[name]+'</svg>';
     }
     function readJSON(key){try{return JSON.parse(localStorage.getItem(key));}catch(error){return null;}}
@@ -17,6 +18,7 @@
         autoRotate:saved.autoRotate!==false,rotation:[8,12,20].indexOf(saved.rotation)>=0?saved.rotation:12};
     var view=api.view={page:1,dialog:'',apps:[],inputs:[],picks:[],start:0,prefs:prefs};
     var pointerX=null,pointerY=null;
+    var dialogReturn=null,weatherStale=false;
     var active=null,dialogRows=[],dialogIndex=0,returnIndex=0,toastTimer,lastInteraction=Date.now(),lastRotation=Date.now(),weatherBusy=false,weatherData=null,weatherAt=0,pendingLaunch=false;
     function persist(){try{localStorage.setItem('inicio.prefs.v2',JSON.stringify(prefs));}catch(error){toast('No se han podido guardar los cambios.');}}
     function toast(text){$('toast').textContent=text;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(function(){$('toast').hidden=true;},5000);}
@@ -63,7 +65,9 @@
         shelfApps().forEach(function(app,i){appTile($('shelf'),'shelf',i,app);});
         if(!shelfApps().length)text('div','empty','Elige tus favoritas en ⚙ Ajustes → Estante.',$('shelf'));
         view.apps.forEach(function(app,i){appTile($('allApps'),'all',i,app);});
-        $('appCount').textContent=view.apps.length+' aplicaciones';
+        var manual=api.capabilities.catalog==='manual';
+        $('appCount').textContent=view.apps.length+(manual?(view.apps.length===1?' acceso configurado':' accesos configurados'):(view.apps.length===1?' aplicación':' aplicaciones'));
+        document.querySelector('.allHeading span').textContent=manual?'TUS ACCESOS CONFIGURADOS':'TODAS TUS APLICACIONES';
         if(oldZone==='shelf'||oldZone==='all'){
             var replacement=nodes(oldZone).find(function(n){return n.dataset.appId===oldId;});
             focus(replacement||nodes(oldZone)[0]);
@@ -120,40 +124,45 @@
     }
     function theme(){var dark=prefs.theme==='dark'||(prefs.theme!=='light'&&(weatherData?weatherData.current.is_day!==1:new Date().getHours()<8||new Date().getHours()>=20));$('app').classList.toggle('dark',dark);}
     function clock(){if(document.hidden)return;var now=new Date();$('clock').textContent=now.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});$('date').textContent=now.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});theme();}
-    function weatherLabel(code){if(code===0)return 'Despejado';if(code<=3)return 'Parcialmente nuboso';if(code<=48)return 'Niebla';if(code<=67)return 'Lluvia';if(code<=77)return 'Nieve';if(code<=82)return 'Chubascos';return 'Tormentas';}
+    function weatherLabel(code){if(typeof code!=='number')return 'Sin datos';if(code===0)return 'Despejado';if(code<=3)return 'Parcialmente nuboso';if(code<=48)return 'Niebla';if(code<=67)return 'Lluvia';if(code<=77||code===85||code===86)return 'Nieve';if(code<=82)return 'Chubascos';return 'Tormentas';}
+    function weatherGlyph(code,isDay){if(code===0)return isDay===0?'moon':'sun';if(code<=3)return isDay===0?'moon':'cloud';if(code>=95)return 'storm';if(code>=71&&code<=77||code===85||code===86)return 'snow';if(code>=51)return 'rain';return 'cloud';}
     function renderWeather(){
         $('weather').style.visibility=prefs.weather?'visible':'hidden';$('weather').disabled=!prefs.weather;
         $('weatherCity').textContent=prefs.city;
-        if(!weatherData)return;
-        var current=weatherData.current,value=current.temperature_2m;if(prefs.unit==='F')value=value*9/5+32;
-        $('temperature').textContent=Math.round(value)+'°'+prefs.unit;
-        $('weatherIcon').innerHTML=glyph(current.is_day?(current.weather_code===0?'sun':'cloud'):'moon');
-        $('weatherDescription').textContent=weatherLabel(current.weather_code);theme();
+        if(!weatherData){$('temperature').textContent='—°';$('weatherDescription').textContent='Consultando el tiempo…';return;}
+        var current=weatherData.current,value=current.temperature_2m;if(prefs.unit==='F'&&typeof value==='number')value=value*9/5+32;
+        $('temperature').textContent=typeof value==='number'&&isFinite(value)?Math.round(value)+'°'+prefs.unit:'—°';
+        $('weatherIcon').innerHTML=glyph(weatherGlyph(current.weather_code,current.is_day));
+        $('weatherDescription').textContent=weatherLabel(current.weather_code)+(weatherStale?' · Guardado':'');theme();
+        if(view.dialog==='weather')api.details.updateWeather(detailHooks);
     }
     function fetchWeather(force){
         if(document.hidden||!prefs.weather||weatherBusy||(!force&&Date.now()-weatherAt<1800000))return;
         weatherBusy=true;var city=prefs.city,lat=INICIO_CONFIG.lat,lon=INICIO_CONFIG.lon;
         var cached=readJSON('inicio.weather.v2');
         var geo=(city.toLowerCase()===INICIO_CONFIG.city.toLowerCase())?Promise.resolve({latitude:lat,longitude:lon}):api.fetchJSON('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(city)+'&count=1&language=es').then(function(data){if(!data.results||!data.results[0])throw new Error('Ciudad no encontrada');return data.results[0];});
-        geo.then(function(loc){return api.fetchJSON('https://api.open-meteo.com/v1/forecast?latitude='+loc.latitude+'&longitude='+loc.longitude+'&current=temperature_2m,weather_code,is_day&daily=sunrise,sunset&timezone=auto&forecast_days=1');}).then(function(data){
+        geo.then(function(loc){return api.fetchJSON('https://api.open-meteo.com/v1/forecast?latitude='+loc.latitude+'&longitude='+loc.longitude+'&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day&hourly=temperature_2m,weather_code,is_day,precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset&timezone=auto&forecast_days=5');}).then(function(data){
             if(!data.current)throw new Error('Sin datos');if(city!==prefs.city)return;
-            weatherData=data;weatherAt=Date.now();try{localStorage.setItem('inicio.weather.v2',JSON.stringify({city:city,at:weatherAt,data:data}));}catch(error){}renderWeather();
+            weatherData=data;weatherStale=false;weatherAt=Date.now();try{localStorage.setItem('inicio.weather.v2',JSON.stringify({city:city,at:weatherAt,data:data}));}catch(error){}renderWeather();
         }).catch(function(){
-            if(cached&&cached.data&&cached.data.current&&cached.city===city&&Date.now()-cached.at<86400000){weatherData=cached.data;renderWeather();$('weatherDescription').textContent+=' · Guardado';}
-            else{$('temperature').textContent='—°';$('weatherDescription').textContent='Sin datos del tiempo';}
-        }).then(function(){weatherBusy=false;});
+            if(city!==prefs.city)return;
+            if(cached&&cached.data&&cached.data.current&&cached.city===city&&Date.now()-cached.at<86400000){weatherData=cached.data;weatherAt=cached.at;weatherStale=true;renderWeather();}
+            else{$('temperature').textContent='—°';$('weatherDescription').textContent='Sin datos del tiempo';if(view.dialog==='weather')api.details.updateWeather(detailHooks);}
+        }).then(function(){weatherBusy=false;if(city!==prefs.city)fetchWeather(true);});
     }
     function showDialog(type,title,rows,hint,selected){
-        view.dialog=type;dialogRows=rows;$('dialogTitle').textContent=title;$('dialogHint').textContent=hint||'';$('dialogList').innerHTML='';$('overlay').hidden=false;
+        if(!view.dialog&&active)dialogReturn={zone:active.dataset.zone,index:Number(active.dataset.index||0)};
+        $('dialog').className='dialog';view.dialog=type;dialogRows=rows;$('dialogTitle').textContent=title;$('dialogHint').textContent=hint||'';$('dialogList').innerHTML='';$('overlay').hidden=false;
         rows.forEach(function(row,i){
             var b=button($('dialogList'),'dialog',i,row.label,function(){row.run();},'settingRow'+(row.danger?' danger':''));
+            b.disabled=!!row.disabled;if(row.disabled)b.setAttribute('aria-disabled','true');
             var label=text('span',row.app?'nameWithIcon':'settingLabel','',b);
             if(row.app){var image=document.createElement('img');image.src=row.app.icon;image.alt='';image.onerror=function(){image.remove();};label.appendChild(image);}
             text('span','settingLabel',row.label,label);text('span','settingValue',row.value||'',b);
         });
         focusZone('dialog',selected||0);
     }
-    function closeDialog(){view.dialog='';$('overlay').hidden=true;dialogRows=[];if(view.page===1)focusZone('shelf',0);else focusZone('inputs',0);}
+    function closeDialog(){view.dialog='';$('overlay').hidden=true;dialogRows=[];if(dialogReturn)focusZone(dialogReturn.zone,dialogReturn.index);else focusZone(view.page===1?'shelf':'inputs',0);dialogReturn=null;}
     function cycle(key,values,direction,index){var i=values.indexOf(prefs[key]);prefs[key]=values[(i+(direction||1)+values.length)%values.length];persist();theme();renderWeather();openSettings(index);}
     function openSettings(selected){
         var labels={auto:'Automático',light:'Claro',dark:'Oscuro'};
@@ -167,7 +176,7 @@
             {label:'Estante de aplicaciones',value:prefs.favorites.length+' / 8  ›',run:openShelf},
             {label:'Actualizar aplicaciones y recomendaciones',value:'›',run:function(){refreshApps();refreshInputs();loadPicks(true);toast('Actualizando…');}},
             {label:'Ajustes de la TV',value:'›',run:function(){launch('com.palm.app.settings');}},
-            {label:'Apagar por completo',value:'Apagar',danger:true,run:confirmPower}
+            {label:'Apagar por completo',value:api.capabilities.rootEnabled?'Apagar':'Requiere root',disabled:!api.capabilities.rootEnabled,danger:true,run:confirmPower}
         ];
         showDialog('settings','⚙  Ajustes del inicio',rows,'↑ ↓ elige · OK o ← → cambia el valor · Atrás cierra',selected);
     }
@@ -200,16 +209,13 @@
             }}
         ],'Apagado ordenado de webOS, no suspensión. El próximo encendido será más lento. Función pendiente de su primera prueba física.');
     }
-    function showPick(item){
-        showDialog('pick',item.title,[{label:'Volver al carrusel',run:closeDialog}],'Disponibilidad en España según TMDB / JustWatch. Puede requerir suscripción, alquiler o compra; no comprueba tus cuentas.');
-        var box=document.createElement('div');text('p','detailText',item.overview,box);text('p','detailProviders',item.providers,box);$('dialogList').insertBefore(box,$('dialogList').firstChild);
-    }
-    function showWeather(){
-        showDialog('weather','El tiempo en '+prefs.city,[{label:'Volver',run:closeDialog}],'Datos meteorológicos: Open-Meteo.');
-        var message=$('temperature').textContent+' · '+$('weatherDescription').textContent;
-        if(weatherData&&weatherData.daily){var d=weatherData.daily;message+='\nAmanecer '+(d.sunrise[0]||'').split('T')[1]+' · Atardecer '+(d.sunset[0]||'').split('T')[1];}
-        var p=text('p','detailText',message);$('dialogList').insertBefore(p,$('dialogList').firstChild);
-    }
+    var detailHooks={dialog:showDialog,close:closeDialog,glyph:glyph,weatherLabel:weatherLabel,weatherGlyph:weatherGlyph,
+        weather:function(){return {city:prefs.city,data:weatherData,unit:prefs.unit,at:weatherAt,stale:weatherStale};},
+        refreshWeather:function(){fetchWeather(true);},
+        neighbor:function(item,direction){var at=view.picks.findIndex(function(p){return p.id===item.id&&p.type===item.type;});view.start=(at+direction+view.picks.length)%view.picks.length;renderCarousel();showPick(view.picks[view.start],direction<0?1:2);}
+    };
+    function showPick(item,selected){api.details.openPick(item,detailHooks,selected);}
+    function showWeather(){focus($('weather'));api.details.openWeather(detailHooks);if(!weatherData||!weatherData.hourly)fetchWeather(true);}
     function back(){
         if(view.dialog==='shelf'){openSettings(6);return;}
         if(view.dialog==='city'){openSettings(3);return;}
@@ -221,6 +227,11 @@
     function move(dx,dy){
         if(view.dialog){
             if(!dialogRows.length)return;
+            if(view.dialog==='pick'||view.dialog==='weather'){
+                if(dy){var scroller=$('detailScroll');if(scroller)scroller.scrollTop+=dy*150;}
+                if(dx)focusZone('dialog',dialogIndex+dx);
+                return;
+            }
             if(dy){focusZone('dialog',dialogIndex+dy);return;}
             if(dx&&dialogRows[dialogIndex].step)dialogRows[dialogIndex].step(dx);
             else if(dx&&view.dialog==='settings')dialogRows[dialogIndex].run();
@@ -260,7 +271,7 @@
         if(code===13){event.preventDefault();if(active&&active.isConnected)active.click();return;}
         if(code>=37&&code<=40){event.preventDefault();move(code===37?-1:code===39?1:0,code===38?-1:code===40?1:0);}
     });
-    $('settings').addEventListener('click',function(){openSettings();});$('live').addEventListener('click',function(){launch('com.webos.app.livetv');});$('weather').addEventListener('click',showWeather);$('nextPage').addEventListener('click',function(){setPage(2);});
+    $('settings').addEventListener('click',function(){focus($('settings'));openSettings();});$('live').addEventListener('click',function(){launch('com.webos.app.livetv');});$('weather').addEventListener('click',showWeather);$('nextPage').addEventListener('click',function(){setPage(2);});
     nodes('header').forEach(function(b,i){b.dataset.index=i;b.addEventListener('mousemove',function(event){pointerFocus(b,event);});b.addEventListener('focus',function(){if(!view.dialog&&active!==b)focus(b);});});
     function resize(){var scale=Math.min(innerWidth/1920,innerHeight/1080);$('app').style.transform='scale('+scale+')';}
     window.addEventListener('resize',resize);resize();

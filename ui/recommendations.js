@@ -33,6 +33,20 @@
         } catch(error) {}
         return null;
     };
+    api.loadPickDetails = function(item) {
+        if(['movie','tv'].indexOf(item.type)<0||!/^\d+$/.test(String(item.id)))return Promise.reject(new Error('Título inválido'));
+        var storage='inicio.detail.'+item.type+'.'+item.id,cached;
+        try{cached=JSON.parse(localStorage.getItem(storage));if(cached&&cached.data&&Array.isArray(cached.data.genres)&&Array.isArray(cached.data.cast)&&Date.now()-cached.at<86400000)return Promise.resolve(cached.data);}catch(error){}
+        return tmdb(item.type+'/'+item.id+'?append_to_response=credits').then(function(data){
+            var result={year:(data.release_date||data.first_air_date||'').slice(0,4),runtime:item.type==='movie'?data.runtime:null,
+                seasons:item.type==='tv'?data.number_of_seasons:null,
+                poster:data.poster_path?'https://image.tmdb.org/t/p/w500'+data.poster_path:null,
+                genres:(data.genres||[]).map(function(g){return g.name;}).filter(Boolean),
+                cast:((data.credits||{}).cast||[]).slice(0,6).map(function(c){return c.name;}).filter(Boolean)};
+            try{localStorage.setItem(storage,JSON.stringify({at:Date.now(),data:result}));}catch(error){}
+            return result;
+        });
+    };
     function providers(result) {
         var es=result.results && result.results.ES;
         if(!es)return {text:'Disponibilidad en España no confirmada',names:[],confirmed:false};
@@ -64,6 +78,7 @@
                     var item=entry.raw;
                     return {id:item.id,type:entry.type,title:item.title||item.name||item.original_title||item.original_name,
                         overview:item.overview||'Sin sinopsis en español.',rating:item.vote_average,
+                        year:(item.release_date||item.first_air_date||'').slice(0,4),poster:item.poster_path?'https://image.tmdb.org/t/p/w500'+item.poster_path:null,
                         image:'https://image.tmdb.org/t/p/w780'+(item.backdrop_path||item.poster_path),
                         providers:p.text,providerNames:p.names,confirmed:p.confirmed};
                 });

@@ -1,0 +1,17 @@
+{
+  "city": "Valencia",
+  "lat": 39.4699,
+  "lon": -0.3763,
+  "tmdbKey": "",
+  "apps": [
+    {"id": "netflix", "title": "Netflix", "color": "#171717"},
+    {"id": "amazon", "title": "Prime Video", "color": "#182738"},
+    {"id": "com.disney.disneyplus-prod", "title": "Disney+", "color": "#192447"},
+    {"id": "youtube.leanback.v4", "title": "YouTube", "color": "#222222"}
+  ],
+  "inputs": [
+    {"id": "com.webos.app.hdmi1", "title": "HDMI 1"},
+    {"id": "com.webos.app.hdmi2", "title": "HDMI 2"},
+    {"id": "com.webos.app.hdmi3", "title": "HDMI 3"}
+  ]
+}

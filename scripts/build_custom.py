@@ -9,10 +9,10 @@ import shutil
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 APP = ROOT / 'app'
 APP_ID = 'org.kagev.inicio'
-VERSION = '0.2.2'
+VERSION = '0.3.0'
 
 
-def build(config_path=None):
+def build(config_path=None, mode='root'):
     path = pathlib.Path(config_path) if config_path else ROOT / 'config.local.json'
     if not path.is_file():
         raise SystemExit('Copy config.example.json to config.local.json and configure your TMDB token first.')
@@ -26,7 +26,10 @@ def build(config_path=None):
         'city': config.get('city', 'Valencia'),
         'lat': float(config.get('lat', 39.4699)),
         'lon': float(config.get('lon', -0.3763)),
-        'tmdbKey': config.get('tmdbKey', '')
+        'tmdbKey': config.get('tmdbKey', ''),
+        'installMode': mode,
+        'apps': config.get('apps', []),
+        'inputs': config.get('inputs', [{'id': 'com.webos.app.hdmi'+str(n), 'title': 'HDMI '+str(n)} for n in range(1, 4)])
     }, ensure_ascii=False) + ';\n')
     (APP / 'private-config.js').chmod(0o600)
     icons = json.loads((ROOT / 'ui/icons.json').read_text())
@@ -53,14 +56,16 @@ def build(config_path=None):
     spec = importlib.util.spec_from_file_location('packager', ROOT / 'scripts/build.py')
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
+    module.DIST_DIR = str(ROOT / 'dist' / mode)
     if not module.build():
         raise SystemExit('Packaging failed')
-    (ROOT / 'dist' / (APP_ID + '_' + VERSION + '_all.ipk')).chmod(0o600)
+    (ROOT / 'dist' / mode / (APP_ID + '_' + VERSION + '_all.ipk')).chmod(0o600)
     print('Built private two-screen launcher:', APP_ID, VERSION)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--config', help='Path to a private JSON configuration file')
+    parser.add_argument('--mode', choices=['root', 'noroot'], default='root', help='Root integration or strictly non-privileged developer installation')
     args = parser.parse_args()
-    build(args.config)
+    build(args.config, args.mode)
