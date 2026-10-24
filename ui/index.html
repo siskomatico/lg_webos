@@ -13,9 +13,9 @@
 <div class="headerActions"><button id="live" class="headerButton" data-zone="header"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="11" width="38" height="27" rx="5"/><path d="m16 4 8 7 8-7M17 44h14"/></svg><span>TV en vivo</span></button><button id="settings" class="headerButton gear" data-zone="header" aria-label="Ajustes"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="m20 4-2 6-5 3-6-1-4 7 4 5v6l-4 5 4 7 6-1 5 3 2 6h8l2-6 5-3 6 1 4-7-4-5v-6l4-5-4-7-6 1-5-3-2-6z" transform="translate(2 -2) scale(.92)"/><circle cx="24" cy="24" r="8"/></svg></button></div>
 </header>
 <section id="page1" class="screen">
-<div class="sectionHeading"><span>PARA VER HOY</span><span id="recommendationInfo">Películas y series · España</span></div>
+<div class="sectionHeading"><span>PARA VER HOY</span><div class="recommendationTools"><span id="recommendationInfo">Películas y series · España</span><button id="refreshRecommendations" class="refreshRecommendations" type="button" data-zone="refresh" data-index="0" aria-label="Cargar otras recomendaciones" title="Cargar otras recomendaciones"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M26 13A10 10 0 0 0 8 9L4 13m0-7v7h7M6 19a10 10 0 0 0 18 4l4-4m0 7v-7h-7"/></svg></button></div></div>
 <div id="carousel" class="carousel" aria-label="Recomendaciones de películas y series"></div>
-<div class="shelfHeading"><span>TU ESTANTE</span><span id="carouselHint">← → Explora las recomendaciones</span></div>
+<div class="shelfHeading"><span id="shelfTitle">TUS APPS</span><span id="carouselHint">← → Explora las recomendaciones</span></div>
 <div id="shelf" class="shelf" aria-label="Aplicaciones favoritas"></div>
 <button id="nextPage" class="pageLink" aria-label="Ver entradas y todas las aplicaciones">↓ &nbsp; Entradas y todas las aplicaciones</button>
 </section>

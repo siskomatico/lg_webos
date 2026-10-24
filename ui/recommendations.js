@@ -61,13 +61,17 @@
         function run() { var i=next++;if(i>=list.length)return Promise.resolve();return worker(list[i]).then(function(v){out[i]=v;}).then(run); }
         return Promise.all([run(),run(),run(),run()]).then(function(){return out;});
     }
-    api.loadRecommendations = function (force) {
+    api.loadRecommendations = function (force,nextBatch) {
         var cached=api.cachedRecommendations();
-        if(!force && cached && Date.now()-cached.at<6*3600000)return Promise.resolve({items:cached.items,cached:true});
+        var currentPage=cached&&Number.isInteger(cached.page)&&cached.page>=1&&cached.page<=500?cached.page:1;
+        var totalPages=cached&&Number.isInteger(cached.totalPages)&&cached.totalPages>=1?Math.min(cached.totalPages,500):500;
+        var page=nextBatch?currentPage%totalPages+1:currentPage;
+        if(!force && !nextBatch && cached && Date.now()-cached.at<6*3600000)return Promise.resolve({items:cached.items,cached:true,page:currentPage});
         if(inflight)return inflight;
         if(!key)return Promise.reject(new Error('Falta la configuración de TMDB'));
-        var query='?watch_region=ES&with_watch_monetization_types=flatrate%7Cfree%7Cads&sort_by=popularity.desc&include_adult=false';
+        var query='?watch_region=ES&with_watch_monetization_types=flatrate%7Cfree%7Cads&sort_by=popularity.desc&include_adult=false&page='+page;
         inflight=Promise.all([tmdb('discover/movie'+query),tmdb('discover/tv'+query)]).then(function(results){
+            totalPages=Math.min(500,results[0].total_pages||500,results[1].total_pages||500);
             var movies=(results[0].results||[]).filter(function(i){return i.backdrop_path||i.poster_path;}).slice(0,10).map(function(i){return {raw:i,type:'movie'};});
             var shows=(results[1].results||[]).filter(function(i){return i.backdrop_path||i.poster_path;}).slice(0,6).map(function(i){return {raw:i,type:'tv'};});
             if(movies.length<10 || shows.length<6)throw new Error('No hay suficientes recomendaciones disponibles');
@@ -84,9 +88,9 @@
                 });
             });
         }).then(function(items){
-            try{localStorage.setItem(cacheKey,JSON.stringify({at:Date.now(),fingerprint:key.slice(-8),items:items}));}catch(error){}
-            inflight=null;return {items:items,cached:false};
-        },function(error){inflight=null;if(cached)return {items:cached.items,cached:true,stale:true};throw error;});
+            try{localStorage.setItem(cacheKey,JSON.stringify({at:Date.now(),fingerprint:key.slice(-8),page:page,totalPages:totalPages,items:items}));}catch(error){}
+            inflight=null;return {items:items,cached:false,page:page};
+        },function(error){inflight=null;if(cached)return {items:cached.items,cached:true,stale:true,page:currentPage};throw error;});
         return inflight;
     };
 })();

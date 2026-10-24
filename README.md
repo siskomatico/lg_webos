@@ -5,22 +5,25 @@
 Películas y series, tiempo, aplicaciones favoritas y entradas. Interfaz en español, con fichas de contenido y previsión meteorológica, sin efectos de desenfoque costosos.
 
 [![Licencia: MIT](https://img.shields.io/badge/licencia-MIT-blue.svg)](LICENSE)
-![Versión](https://img.shields.io/badge/versi%C3%B3n-0.3.0-356ac3)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-0.4.0-356ac3)
 [![Pruebas](https://github.com/siskomatico/lg_webos/actions/workflows/test.yml/badge.svg)](https://github.com/siskomatico/lg_webos/actions/workflows/test.yml)
 ![Estado](https://img.shields.io/badge/estado-experimental-orange)
 
-![Pantalla principal con tiempo, reloj, carrusel y aplicaciones favoritas](docs/images/inicio.png)
+![Pantalla principal v0.4: botón de nuevas recomendaciones y Tus apps centradas](docs/images/inicio.png)
 
-[Capturas](#capturas) · [Instalar sin root](#instalación-sin-root) · [Instalar con root](#instalación-con-root) · [Diferencias](#qué-cambia-con-y-sin-root) · [Controles](#controles-del-mando) · [Créditos](#créditos-y-licencias)
+*Vista de escritorio con datos e iconos de la instalación de referencia; las fichas de detalle mostradas más abajo se capturaron en la TV.*
+
+[Capturas](#capturas) · [Instalación con/sin root](#instalación) · [Diferencias](#qué-cambia-con-y-sin-root) · [Controles](#controles-del-mando) · [Créditos](#créditos-y-licencias)
 
 > Proyecto comunitario no oficial. No es un firmware, no elimina el Home nativo y no modifica particiones. La compatibilidad no se garantiza para todos los televisores webOS.
 
-## Novedades de v0.3.0
+## Novedades de v0.4.0
 
-- **Recomendaciones con ficha cinematográfica:** carátula grande, puntuación, año, duración o temporadas, géneros, sinopsis desplazable, reparto y plataformas de España. Títulos anterior/siguiente sin cerrar la ficha. La información adicional se solicita al abrir y se guarda durante 24 horas.
-- **Tiempo con previsión completa:** temperatura y estado actual, sensación térmica, humedad, viento, amanecer/atardecer, seis próximas horas y cinco días con máximas, mínimas y probabilidad de lluvia. Respeta °C/°F e indica cuándo utiliza datos guardados.
-- **Modo sin root explícito:** no realiza ninguna llamada a Homebrew, bloquea el apagado privilegiado y permite un catálogo manual si webOS deniega la lista de aplicaciones.
-- Mejor restauración del foco al cerrar las fichas y navegación con el mando.
+- Nuevo ID de paquete: **`org.smwebos.inicio`**. Consulta la [migración](#migración-desde-versiones-anteriores) antes de sustituir una instalación anterior.
+- Las fichas de recomendaciones respetan el tema **claro, oscuro o automático**, igual que el resto de la interfaz.
+- Botón **↻** junto a «10 películas · 6 series · España» para cargar **otra tanda** desde TMDB, no simplemente volver a consultar los mismos títulos.
+- **«Tus apps»** y su fila de favoritas centradas, independientemente del número de aplicaciones.
+- Instalaciones con/sin root en apartados desplegables, con la información común fuera.
 
 ## Funciones
 
@@ -29,7 +32,7 @@ Películas y series, tiempo, aplicaciones favoritas y entradas. Interfaz en espa
 | **Inicio** | Tiempo, reloj, TV en vivo, ajustes y carrusel de **10 películas + 6 series**, con tres tarjetas visibles. |
 | **Fichas** | Carátula, metadatos, sinopsis y proveedores de España según TMDB/JustWatch; no asignados por suposición. |
 | **Tiempo** | Panel de condiciones actuales, próximas horas y previsión de cinco días. |
-| **Estante** | Hasta **8 favoritas**, con iconos grandes y orden configurable desde el mando. |
+| **Tus apps** | Hasta **8 favoritas** centradas, con iconos grandes y orden configurable desde el mando. |
 | **Entradas y apps** | Entradas y rejilla navegable; detección automática o accesos manuales según permisos. |
 | **Ajustes** | Tema claro/oscuro/automático, ciudad, unidades, carrusel y edición del estante. |
 
@@ -37,7 +40,7 @@ El carrusel se pausa mientras interactúas. Hay caché de datos y el trabajo per
 
 ## Capturas
 
-Capturas reales del televisor de referencia. Las apps y sus iconos dependen de cada instalación; los iconos extraídos del televisor no se distribuyen como assets.
+Fichas, entradas y ajustes capturados en el televisor de referencia. La vista principal está renderizada en escritorio con datos de esa instalación. Las apps y sus iconos dependen de cada TV; los iconos extraídos no se distribuyen como assets.
 
 ### Nuevas vistas de detalle
 
@@ -80,7 +83,21 @@ La interfaz no necesita root. Los permisos para consultar o controlar webOS son 
 
 En la referencia, `launch` y `getAllInputStatus` funcionaron sin pasar por el servicio privilegiado. `listLaunchPoints`, `listApps` y `getAppInfo` fueron **denegados** a la app. Por eso no se promete enumeración automática sin root. El catálogo manual evita que ese bloqueo inutilice el estante.
 
-## Instalación sin root
+## Instalación
+
+### Preparación común
+
+Con Python 3 disponible y tu token de lectura de TMDB preparado, descarga el proyecto:
+
+```sh
+git clone https://github.com/siskomatico/lg_webos.git
+cd lg_webos
+```
+
+Elige **uno** de los dos procedimientos. Ambos usan la misma interfaz y el ID `org.smwebos.inicio`.
+
+<details>
+<summary><strong>Instalación sin root</strong> — Developer Mode</summary>
 
 ### 1. Preparar Developer Mode
 
@@ -93,15 +110,13 @@ En la referencia, `launch` y `getAllInputStatus` funcionaron sin pasar por el se
 ### 2. Configurar y compilar
 
 ```sh
-git clone https://github.com/siskomatico/lg_webos.git
-cd lg_webos
 cp config.noroot.example.json config.local.json
 chmod 600 config.local.json
 # Edita ciudad, coordenadas, tmdbKey y tus accesos.
 python3 scripts/build_custom.py --mode noroot
 ```
 
-Se genera **`dist/noroot/org.kagev.inicio_0.3.0_all.ipk`**.
+Se genera **`dist/noroot/org.smwebos.inicio_0.4.0_all.ipk`**.
 
 El ejemplo incluye accesos conocidos a Netflix, Prime Video, Disney+ y YouTube. **Adáptalos a las apps que tengas realmente instaladas.** Si la lista del sistema está bloqueada, no se comprueba su instalación; se muestran como «accesos configurados», no como inventario detectado.
 
@@ -123,12 +138,15 @@ El ejemplo incluye accesos conocidos a Netflix, Prime Video, Disney+ y YouTube. 
 En **webOS Dev Manager**, selecciona tu dispositivo, pulsa **Install** y elige el IPK de `dist/noroot/`. También puedes usar `ares-install` si ya tienes configurada la CLI oficial:
 
 ```sh
-ares-install --device mi-tv dist/noroot/org.kagev.inicio_0.3.0_all.ipk
+ares-install --device mi-tv dist/noroot/org.smwebos.inicio_0.4.0_all.ipk
 ```
 
 Abre **Inicio LG** desde el menú de LG. Si tu modelo lo permite, asígnalo al acceso rápido de una tecla numérica. Este modo **no intercepta Home ni instala scripts de arranque** y nunca llama al servicio root de Homebrew.
 
-## Instalación con root
+</details>
+
+<details>
+<summary><strong>Instalación con root</strong> — Homebrew Channel</summary>
 
 ### 1. Requisitos del televisor
 
@@ -137,15 +155,13 @@ TV con root ya obtenido y **Homebrew Channel con root activado**. No se incluye 
 ### 2. Configurar y compilar
 
 ```sh
-git clone https://github.com/siskomatico/lg_webos.git
-cd lg_webos
 cp config.example.json config.local.json
 chmod 600 config.local.json
 # Edita ciudad, coordenadas y tmdbKey.
 python3 scripts/build_custom.py --mode root
 ```
 
-Se genera **`dist/root/org.kagev.inicio_0.3.0_all.ipk`**. Las llamadas públicas se intentan primero; Homebrew se utiliza para las alternativas de lectura que lo necesitan y para el apagado confirmado.
+Se genera **`dist/root/org.smwebos.inicio_0.4.0_all.ipk`**. Las llamadas públicas se intentan primero; Homebrew se utiliza para las alternativas de lectura que lo necesitan y para el apagado confirmado.
 
 ### 3. Iconos del televisor — opcional
 
@@ -160,13 +176,23 @@ La herramienta lee las imágenes por SSH, sin abrir/desinstalar apps ni modifica
 
 Instala el IPK con **webOS Dev Manager configurado para tu conexión root**, o mediante el instalador webOS compatible con tu método de root (`com.webos.appInstallService/dev/install`). No es necesario activar Developer Mode.
 
-El ID sigue siendo **`org.kagev.inicio`**. Si ya tienes Home/arranque redirigidos a ese ID, no debes cambiarlos para actualizar. La integración es externa y específica de cada dispositivo: **el instalador no reasigna teclas ni modifica el arranque**. No se elimina ni suplanta el Home de LG; puede aparecer brevemente en algunas transiciones.
+El ID es **`org.smwebos.inicio`**. Si actualizas desde el ID anterior, cambia las referencias de tu integración Home/arranque **solo después de instalar y comprobar la nueva app**, conservando una copia de los archivos modificados. La integración es externa y específica de cada dispositivo: **el instalador no reasigna teclas ni modifica el arranque**. No se elimina ni suplanta el Home de LG; puede aparecer brevemente en algunas transiciones.
+
+</details>
 
 ### Configuración y paquetes privados — ambos métodos
 
 Puedes utilizar `--config /ruta/a/configuracion.json`. Ambos modos tienen el mismo ID: instalar uno sustituye al otro; no son apps independientes.
 
 > **Los IPK y `app/private-config.js` contienen tu token.** No subas los paquetes personalizados a GitHub, aunque el código tenga licencia MIT. La configuración, las imágenes importadas y los directorios generados están ignorados por Git. Este repositorio distribuye fuentes, no credenciales compartidas.
+
+### Migración desde versiones anteriores
+
+Hasta v0.3.0 se utilizaba `org.kagev.inicio`; desde v0.4.0 se usa **`org.smwebos.inicio`**. Para webOS son dos aplicaciones distintas: instalar la nueva no actualiza la antigua ni comparte automáticamente sus preferencias.
+
+Conserva la app anterior hasta comprobar la nueva. Si deseas mantener tus favoritas y ajustes, exporta únicamente `inicio.prefs.v2` desde su almacenamiento mediante las herramientas de depuración y restaura ese valor en la nueva app antes de recargarla. No publiques exportaciones del almacenamiento. Después puedes retirar la app anterior; con root, verifica primero que Home/arranque ya apuntan al nuevo ID.
+
+Las claves de preferencias internas se mantienen para facilitar esa migración. Los dos modos actuales, root y sin root, sí comparten el nuevo ID entre sí.
 
 ## Controles del mando
 
@@ -176,6 +202,7 @@ Puedes utilizar `--config /ruta/a/configuracion.json`. Ambos modos tienen el mis
 | OK | Abrir el elemento o ejecutar la acción seleccionada. |
 | ↓ desde el estante | Abrir entradas y aplicaciones. |
 | ← → en el carrusel | Explorar recomendaciones. |
+| ↑ desde la tarjeta derecha, OK sobre ↻ | Cargar otra tanda de recomendaciones. |
 | ↑ ↓ en una ficha | Desplazar la sinopsis o previsión. |
 | ← → en una ficha | Elegir Volver / Anterior / Siguiente, o actualizar el tiempo. |
 | OK en el editor del estante | Añadir/quitar una favorita, hasta ocho. |
@@ -187,6 +214,7 @@ Las preferencias se guardan en `localStorage`. No hay cuenta propia ni sincroniz
 ## Datos, límites y seguridad
 
 - Recomendaciones basadas en popularidad y disponibilidad en España, no en tu historial.
+- ↻ avanza de página en los resultados de TMDB, manteniendo 10 películas y 6 series; al llegar al límite común vuelve al principio. La página queda guardada en la caché. La disponibilidad y el orden pueden cambiar, por lo que entre tandas puede repetirse algún título. Si falla la consulta se conserva la tanda anterior, sin avanzar la página.
 - Las plataformas no verifican tus suscripciones, idiomas ni acceso gratuito. Se distinguen los datos sin confirmar y las ofertas de alquiler/compra.
 - **No hay reproducción directa ni deep-linking** de recomendaciones.
 - Caché: recomendaciones seis horas, fichas 24 horas, tiempo 30 minutos. Si falla la red se indica cuando se usan datos guardados. No se inventan valores meteorológicos ausentes.
@@ -215,6 +243,8 @@ npm test
 
 Las pruebas usan servicios, credenciales e imágenes ficticios. Sirven la app por HTTP solo en loopback, **sin servir tu configuración privada**. Cubren fichas, metadatos bajo demanda/caché, foco, previsión, °C/°F, datos guardados, las dos pantallas, carrusel, estante, permisos denegados, catálogo manual y ausencia de llamadas privilegiadas en modo sin root. El apagado confirmado se prueba únicamente con un servicio simulado.
 
+También se comprueban el tema de las fichas, el centrado con una/tres/seis/ocho favoritas y la paginación de recomendaciones: caché, clics repetidos, fallos de red y vuelta al inicio.
+
 GitHub Actions compila y prueba ambos modos. Capturas e informes de diagnóstico van a `research/`, excluido de Git.
 
 <details>
@@ -226,6 +256,7 @@ Solo si tu televisor ya dispone de depuración accesible, crea un túnel loopbac
 ssh -N -L 127.0.0.1:19998:127.0.0.1:9998 root@IP_DE_LA_TV
 npm run test:tv
 node tests/tv-details.cjs
+node tests/tv-revision.cjs
 ```
 
 Son pruebas específicas del modelo de referencia, con tres HDMI. Abren pantallas y pueden interferir con el uso del mando: no las ejecutes mientras alguien ve la TV. Guardan la función de apagado, la bloquean durante la prueba y la restauran al terminar. No habilitan depuración ni abren puertos externos.

@@ -61,7 +61,7 @@
             var seen = {};
             return list.filter(function (app) {
                 var id = app.appId || app.id;
-                if (!id || seen[id] || id === 'org.kagev.inicio' || app.visible === false || app.isHidden) return false;
+                if (!id || seen[id] || ['org.smwebos.inicio','org.kagev.inicio'].indexOf(id)>=0 || app.visible === false || app.isHidden) return false;
                 if (/^com\.webos\.(service\.|app\.(home$|livetv$|hdmi\d$|screensaver$))/.test(id)) return false;
                 seen[id] = true; return true;
             }).map(function (app) {

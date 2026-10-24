@@ -74,10 +74,10 @@
     "color": "#ffffff",
     "icon": "icons/netflix.png"
   },
-  "org.kagev.inicio": {
+  "org.smwebos.inicio": {
     "title": "Inicio LG · Personalizado",
     "color": "#0a84ff",
-    "icon": "icons/org.kagev.inicio.png"
+    "icon": "assets/icon.png"
   },
   "org.webosbrew.hbchannel": {
     "title": "Homebrew Channel",

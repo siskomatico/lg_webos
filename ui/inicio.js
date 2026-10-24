@@ -18,7 +18,7 @@
         autoRotate:saved.autoRotate!==false,rotation:[8,12,20].indexOf(saved.rotation)>=0?saved.rotation:12};
     var view=api.view={page:1,dialog:'',apps:[],inputs:[],picks:[],start:0,prefs:prefs};
     var pointerX=null,pointerY=null;
-    var dialogReturn=null,weatherStale=false;
+    var dialogReturn=null,weatherStale=false,picksBusy=false;
     var active=null,dialogRows=[],dialogIndex=0,returnIndex=0,toastTimer,lastInteraction=Date.now(),lastRotation=Date.now(),weatherBusy=false,weatherData=null,weatherAt=0,pendingLaunch=false;
     function persist(){try{localStorage.setItem('inicio.prefs.v2',JSON.stringify(prefs));}catch(error){toast('No se han podido guardar los cambios.');}}
     function toast(text){$('toast').textContent=text;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(function(){$('toast').hidden=true;},5000);}
@@ -109,13 +109,19 @@
         if(focused)focusZone('picks',position);
         var next=view.picks[(view.start+3)%view.picks.length];if(next){var preload=new Image();preload.src=next.image;}
     }
-    function loadPicks(force){
-        if(document.hidden)return;
-        api.loadRecommendations(force).then(function(result){
-            view.picks=result.items;view.start=view.start%view.picks.length;renderCarousel();
+    function loadPicks(force,nextBatch){
+        if(document.hidden||picksBusy)return;
+        picksBusy=true;$('refreshRecommendations').setAttribute('aria-busy','true');$('refreshRecommendations').setAttribute('aria-disabled','true');
+        api.loadRecommendations(force,nextBatch).then(function(result){
+            view.picks=result.items;view.recommendationPage=result.page||1;
+            view.start=nextBatch&&!result.stale?0:view.start%view.picks.length;renderCarousel();
             var movies=view.picks.filter(function(p){return p.type==='movie';}).length,shows=view.picks.length-movies;
             $('recommendationInfo').textContent=movies+' películas · '+shows+' series · España'+(result.stale?' · Sin actualizar':'');
-        }).catch(function(){if(!view.picks.length)$('carousel').firstChild.textContent='No se han podido cargar las recomendaciones. Reintenta desde Ajustes.';toast('TMDB no está disponible. No se inventarán plataformas.');});
+            $('refreshRecommendations').title='Cargar otras recomendaciones · Tanda '+view.recommendationPage;
+            if(nextBatch)toast(result.stale?'No se pudo cargar otra tanda. Se conservan las recomendaciones guardadas.':'Nueva tanda de recomendaciones');
+        }).catch(function(){if(!view.picks.length)$('carousel').firstChild.textContent='No se han podido cargar las recomendaciones. Reintenta desde Ajustes.';toast('TMDB no está disponible. No se inventarán plataformas.');}).then(function(){
+            picksBusy=false;$('refreshRecommendations').setAttribute('aria-busy','false');$('refreshRecommendations').setAttribute('aria-disabled','false');
+        });
     }
     function slide(direction,automatic){
         if(!view.picks.length)return;
@@ -241,12 +247,15 @@
         if(zone==='header'){
             var header=nodes('header'),at=header.indexOf(active);
             if(dx)focus(header[Math.max(0,Math.min(header.length-1,at+dx))]);
-            if(dy>0)focusZone(view.page===1?'picks':'inputs',0);
+            if(dy>0)focusZone(view.page===1?(active.id==='settings'?'refresh':'picks'):'inputs',0);
             if(dy<0&&view.page===2)setPage(1);
+        }else if(zone==='refresh'){
+            if(dy>0||dx<0)focusZone('picks',2);
+            if(dy<0||dx>0)focusZone('header',2);
         }else if(zone==='picks'){
             if(dx){if(index+dx>=0&&index+dx<3)focusZone('picks',index+dx);else{slide(dx,false);focusZone('picks',index);}}
             if(dy>0)focusZone('shelf',Math.round(index*Math.max(0,shelfApps().length-1)/2));
-            if(dy<0)focusZone('header',index===0?0:1);
+            if(dy<0)focusZone(index===2?'refresh':'header',index===0?0:index===2?0:1);
         }else if(zone==='shelf'){
             if(dx)focusZone('shelf',index+dx);
             if(dy>0)setPage(2);
@@ -272,11 +281,15 @@
         if(code>=37&&code<=40){event.preventDefault();move(code===37?-1:code===39?1:0,code===38?-1:code===40?1:0);}
     });
     $('settings').addEventListener('click',function(){focus($('settings'));openSettings();});$('live').addEventListener('click',function(){launch('com.webos.app.livetv');});$('weather').addEventListener('click',showWeather);$('nextPage').addEventListener('click',function(){setPage(2);});
+    var refreshButton=$('refreshRecommendations');
+    refreshButton.addEventListener('click',function(){focus(refreshButton);lastInteraction=Date.now();loadPicks(true,true);});
+    refreshButton.addEventListener('mousemove',function(event){pointerFocus(refreshButton,event);});
+    refreshButton.addEventListener('focus',function(){if(!view.dialog&&active!==refreshButton)focus(refreshButton);});
     nodes('header').forEach(function(b,i){b.dataset.index=i;b.addEventListener('mousemove',function(event){pointerFocus(b,event);});b.addEventListener('focus',function(){if(!view.dialog&&active!==b)focus(b);});});
     function resize(){var scale=Math.min(innerWidth/1920,innerHeight/1080);$('app').style.transform='scale('+scale+')';}
     window.addEventListener('resize',resize);resize();
     // A saved snapshot is used only until the TV returns its actual installed list.
-    view.apps=Object.keys(window.INICIO_ICONS||{}).filter(function(id){return id!=='org.kagev.inicio';}).map(function(id){var a=INICIO_ICONS[id];return{id:id,title:a.title,icon:a.icon,color:a.color,brand:a.brand};}).sort(function(a,b){return a.title.localeCompare(b.title,'es');});
+    view.apps=Object.keys(window.INICIO_ICONS||{}).filter(function(id){return ['org.smwebos.inicio','org.kagev.inicio'].indexOf(id)<0;}).map(function(id){var a=INICIO_ICONS[id];return{id:id,title:a.title,icon:a.icon,color:a.color,brand:a.brand};}).sort(function(a,b){return a.title.localeCompare(b.title,'es');});
     view.inputs=readJSON('inicio.inputs')||[{id:'com.webos.app.livetv',title:'TV en vivo',status:'Antena / canales'},1,2,3].map(function(value){return typeof value==='object'?value:{id:'com.webos.app.hdmi'+value,title:'HDMI '+value,status:'Estado sin confirmar'};});
     var weatherSaved=readJSON('inicio.weather.v2');if(weatherSaved&&weatherSaved.data&&weatherSaved.data.current&&weatherSaved.city===prefs.city&&Date.now()-weatherSaved.at<1800000){weatherData=weatherSaved.data;weatherAt=weatherSaved.at;}
     var pickSaved=api.cachedRecommendations();if(pickSaved)view.picks=pickSaved.items;

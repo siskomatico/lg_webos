@@ -8,8 +8,8 @@ import shutil
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 APP = ROOT / 'app'
-APP_ID = 'org.kagev.inicio'
-VERSION = '0.3.0'
+APP_ID = 'org.smwebos.inicio'
+VERSION = '0.4.0'
 
 
 def build(config_path=None, mode='root'):

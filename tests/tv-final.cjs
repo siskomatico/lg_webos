@@ -2,23 +2,23 @@
 const fs=require('fs'),assert=require('assert'),{connect}=require('../scripts/cdp.cjs');
 (async()=>{
  fs.mkdirSync('research',{recursive:true,mode:0o700});
- const c=await connect('org.kagev.inicio');
+ const c=await connect('org.smwebos.inicio');
  try{
-  await c.evaluate(`window.__qaPoweroff=Inicio.poweroff;window.__qaBlockedPoweroff=0;Inicio.poweroff=function(){window.__qaBlockedPoweroff++;return Promise.reject(new Error('Poweroff blocked during QA'));};Inicio.setPage(1);`);
+  await c.evaluate(`window.__qaPoweroff=Inicio.poweroff;window.__qaBlockedPoweroff=0;Inicio.poweroff=function(){window.__qaBlockedPoweroff++;return Promise.reject(new Error('Poweroff blocked during QA'));};if(Inicio.view.dialog==='powerPending')throw new Error('Shutdown already pending; QA refused');for(var i=0;i<4&&Inicio.view.dialog;i++)document.dispatchEvent(new KeyboardEvent('keydown',{keyCode:461,which:461,bubbles:true,cancelable:true}));Inicio.setPage(1);`);
   const summary=await c.evaluate(`({title:document.title,lang:document.documentElement.lang,apps:Inicio.view.apps.length,shelf:document.querySelectorAll('#shelf .appTile').length,movies:Inicio.view.picks.filter(function(p){return p.type==='movie';}).length,series:Inicio.view.picks.filter(function(p){return p.type==='tv';}).length,providersConfirmed:Inicio.view.picks.filter(function(p){return p.confirmed;}).length,platforms:Inicio.view.picks.map(function(p){return {title:p.title,type:p.type,platforms:p.providers};}),inputs:Inicio.view.inputs,weather:document.getElementById('temperature').textContent,blur:Array.from(document.querySelectorAll('*')).filter(function(el){var s=getComputedStyle(el);return ((s.filter||'')+(s.backdropFilter||'')).indexOf('blur(')>=0;}).length,brokenIcons:Array.from(document.querySelectorAll('.appTile img')).filter(function(i){return !i.complete||!i.naturalWidth;}).length})`);
   assert.equal(summary.lang,'es');assert.equal(summary.movies,10);assert.equal(summary.series,6);assert.equal(summary.inputs.length,4);assert.equal(summary.blur,0);assert.equal(summary.brokenIcons,0);assert(summary.weather.includes('°'));
   async function screenshot(name){const r=await c.send('Page.captureScreenshot',{format:'png'});fs.writeFileSync('research/'+name,Buffer.from(r.data,'base64'));}
-  async function key(code){await c.evaluate(`document.dispatchEvent(new KeyboardEvent('keydown',{keyCode:${code},which:${code},bubbles:true,cancelable:true}));`);}
+  async function key(code,anchor){await c.evaluate(`${anchor?'document.querySelector('+JSON.stringify(anchor)+').focus();':''}document.dispatchEvent(new KeyboardEvent('keydown',{keyCode:${code},which:${code},bubbles:true,cancelable:true}));`);}
   await screenshot('tv-v02-main.png');
-  await key(40);assert.equal(await c.evaluate('Inicio.view.page'),2);
+  await key(40,'#shelf button');assert.equal(await c.evaluate('Inicio.view.page'),2);
   await new Promise(r=>setTimeout(r,1200));
   await screenshot('tv-v02-page2.png');
   // The refreshed input list must leave a live, connected focus target.
   assert(await c.evaluate(`document.activeElement.isConnected&&document.activeElement.dataset.zone==='inputs'`));
-  await key(40);for(let i=0;i<4;i++)await key(40);
+  await key(40,'#inputs button');for(let i=0;i<4;i++)await key(40);
   if(summary.apps>24)assert(await c.evaluate(`document.getElementById('allApps').scrollTop>0`));
   await key(461);assert.equal(await c.evaluate('Inicio.view.page'),1);
-  await key(38);
+  await key(38,'#shelf button');
   const visited=new Set();
   for(let i=0;i<20;i++){visited.add(await c.evaluate(`document.activeElement.dataset.mediaId`));await key(39);}
   assert(visited.size>=16,'Remote can reach all 16 recommendations');

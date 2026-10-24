@@ -1,7 +1,7 @@
 /* Optional real-TV QA. Reads/opens detail views only; never confirms poweroff. */
 const fs=require('node:fs'),assert=require('node:assert/strict'),{connect}=require('../scripts/cdp.cjs');
 (async()=>{
- const c=await connect('org.kagev.inicio');fs.mkdirSync('research',{recursive:true,mode:0o700});
+ const c=await connect('org.smwebos.inicio');fs.mkdirSync('research',{recursive:true,mode:0o700});
  async function wait(expression){for(let i=0;i<45;i++){if(await c.evaluate(expression))return;await new Promise(r=>setTimeout(r,400));}throw Error('Timed out waiting for TV UI: '+expression);}
  async function shot(name){const image=await c.send('Page.captureScreenshot',{format:'png'});fs.writeFileSync('research/'+name,Buffer.from(image.data,'base64'),{mode:0o600});}
  async function key(code){await c.evaluate(`document.dispatchEvent(new KeyboardEvent('keydown',{keyCode:${code},which:${code},bubbles:true,cancelable:true}));`);}

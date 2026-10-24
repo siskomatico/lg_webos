@@ -12,6 +12,7 @@ let browser,server;
  browser=await playwright.chromium.launch({headless:true});
  const page=await browser.newPage({viewport:{width:1920,height:1080}}),errors=[],requests=[];
  page.on('pageerror',e=>errors.push(e.message));
+ const discoverPages=[];let failDiscover=false;
  await page.addInitScript(({metadata})=>{
    Object.defineProperty(window,'INICIO_ICONS',{configurable:true,get(){return metadata;},set(){}});
    Object.defineProperty(window,'INICIO_CONFIG',{configurable:true,get(){return {city:'Valencia',lat:39.4699,lon:-0.3763,tmdbKey:'test-token-not-a-secret'};},set(){}});
@@ -23,7 +24,7 @@ let browser,server;
      if(o.method==='exec'){
        window.__commands.push(o.parameters.command);
        let stdoutString='';
-       if(o.parameters.command.includes('listApps'))stdoutString=JSON.stringify({returnValue:true,apps:Object.keys(metadata).map(id=>({id,title:metadata[id].title,visible:true})).concat(Array.from({length:8},(_,i)=>({id:'test.extra.'+i,title:'Extra '+i,visible:true})),[{id:'hidden.test',title:'Hidden',visible:false}])});
+       if(o.parameters.command.includes('listApps'))stdoutString=JSON.stringify({returnValue:true,apps:Object.keys(metadata).map(id=>({id,title:metadata[id].title,visible:true})).concat(Array.from({length:8},(_,i)=>({id:'test.extra.'+i,title:'Extra '+i,visible:true})),[{id:'hidden.test',title:'Hidden',visible:false},{id:'org.kagev.inicio',title:'Legacy launcher',visible:true}])});
        return setTimeout(()=>o.onSuccess({returnValue:true,stdoutString,stderrString:''}),0);
      }
      if(o.method==='launch'){window.__launches.push(o.parameters.id);return o.onSuccess({returnValue:true});}
@@ -34,8 +35,9 @@ let browser,server;
  await page.route('https://api.themoviedb.org/**',async route=>{
    const url=new URL(route.request().url());requests.push(url.pathname);
    if(url.pathname.includes('/discover/')){
-     const type=url.pathname.includes('/movie')?'movie':'tv';
-     return route.fulfill({json:{results:Array.from({length:20},(_,i)=>({id:(type==='movie'?100:200)+i,title:type==='movie'?'Película '+i:undefined,name:type==='tv'?'Serie '+i:undefined,backdrop_path:'/fixture-'+i+'.jpg',overview:'Una historia de aventuras y descubrimientos que invita a mirar más allá de lo conocido. '.repeat(28),vote_average:7.8}))}});
+     const type=url.pathname.includes('/movie')?'movie':'tv',batch=Number(url.searchParams.get('page')||1),offset=(batch-1)*1000;
+     discoverPages.push(batch);if(failDiscover)return route.fulfill({status:503,json:{error:'Simulated service failure'}});
+     return route.fulfill({json:{total_pages:3,results:Array.from({length:20},(_,i)=>({id:(type==='movie'?100:200)+i+offset,title:type==='movie'?'Película '+(i+offset):undefined,name:type==='tv'?'Serie '+(i+offset):undefined,backdrop_path:'/fixture-'+i+'.jpg',overview:'Una historia de aventuras y descubrimientos que invita a mirar más allá de lo conocido. '.repeat(28),vote_average:7.8}))}});
    }
    if(url.pathname.endsWith('/watch/providers'))return route.fulfill({json:{results:{ES:{flatrate:[{provider_id:9,provider_name:'Amazon Prime Video'},{provider_id:337,provider_name:'Disney+'}]}}}});
    if(/^\/3\/(movie|tv)\/\d+$/.test(url.pathname))return route.fulfill({json:{release_date:'2026-09-18',first_air_date:'2025-01-10',runtime:126,number_of_seasons:3,poster_path:'/poster-fixture.jpg',genres:[{name:'Aventura'},{name:'Drama'}],credits:{cast:[{name:'Intérprete A'},{name:'Intérprete B'}]}}});
@@ -59,11 +61,21 @@ let browser,server;
  assert.equal(await page.locator('#shelf .appTile .appName').count(),0);
  assert.equal(await page.evaluate(()=>Array.from(document.querySelectorAll('*')).filter(n=>(getComputedStyle(n).backdropFilter||'').includes('blur')).length),0);
  assert.equal(await page.evaluate(()=>__commands.some(c=>c.includes('poweroff'))),false);
+ const favoritesBeforeCentering=await page.evaluate(()=>Inicio.view.prefs.favorites.slice());
+ for(const count of [1,3,6,8]){
+  await page.evaluate(async({favorites,count})=>{Inicio.view.prefs.favorites=favorites.slice(0,count);await Inicio.refreshApps();},{favorites:favoritesBeforeCentering,count});
+  const centered=await page.evaluate(()=>{const shelf=document.getElementById('shelf').getBoundingClientRect(),apps=document.querySelectorAll('#shelf button'),first=apps[0].getBoundingClientRect(),last=apps[apps.length-1].getBoundingClientRect(),title=document.getElementById('shelfTitle').getBoundingClientRect();return {apps:(first.left+last.right)/2,title:(title.left+title.right)/2,center:(shelf.left+shelf.right)/2};});
+  assert(Math.abs(centered.apps-centered.center)<2,'Apps centered with '+count+' favorites');assert(Math.abs(centered.title-centered.center)<1,'Heading centered independently');
+ }
+ await page.evaluate(async favorites=>{Inicio.view.prefs.favorites=favorites;await Inicio.refreshApps();},favoritesBeforeCentering);
+ assert.equal(await page.locator('#shelfTitle').innerText(),'TUS APPS');
  await page.screenshot({path:root+'/research/inicio-v02-day.png'});
  // Cinematic details: lazy metadata, remote scrolling, neighbors and focus restoration.
  await page.locator('.pick').first().click();
  await page.waitForFunction(()=>document.querySelector('.detailGenres').textContent.includes('Aventura'));
  assert.equal(await page.locator('.detailArtwork img').count(),1);
+ assert.equal(await page.locator('#dialog').evaluate(n=>getComputedStyle(n).backgroundColor),await page.locator('#live').evaluate(n=>getComputedStyle(n).backgroundColor),'Light detail follows light panel');
+ assert.equal(await page.locator('.pickTitleLarge').evaluate(n=>getComputedStyle(n).color),'rgb(36, 37, 44)');
  assert.equal(await page.locator('.platformChip').count(),2);
  assert((await page.locator('.detailFacts').innerText()).includes('126 min'));
  await page.keyboard.press('ArrowDown');assert((await page.locator('#detailScroll').evaluate(n=>n.scrollTop))>0);
@@ -130,9 +142,27 @@ let browser,server;
  // First click advances light -> dark.
  assert(await page.locator('#app').evaluate(n=>n.classList.contains('dark')));
  await page.keyboard.press('Escape');await page.screenshot({path:root+'/research/inicio-v02-night.png'});
+ await page.locator('.pick').first().click();assert.equal(await page.locator('#dialog').evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(34, 35, 40)');
+ assert.equal(await page.locator('.pickTitleLarge').evaluate(n=>getComputedStyle(n).color),'rgb(245, 245, 247)');await page.keyboard.press('Escape');
  await page.reload();await page.waitForFunction(count=>Inicio.view.apps.length===count&&Inicio.view.picks.length===16,expectedApps);
  assert.deepEqual(await page.evaluate(()=>Inicio.view.prefs.favorites),saved);
  assert.equal(requests.filter(p=>p.includes('/discover/')).length,2,'Cached mixed recommendations avoid repeat API calls');
+ // Refresh advances the TMDB page, ignores repeat clicks while busy, and preserves cache on failure.
+ const firstBatch=await page.evaluate(()=>Inicio.view.picks.map(p=>p.type+':'+p.id));
+ await page.locator('.pick').nth(2).click();await page.keyboard.press('Escape');await page.keyboard.press('ArrowUp');
+ assert.equal(await page.evaluate(()=>document.activeElement.id),'refreshRecommendations');
+ await page.evaluate(()=>{const b=document.getElementById('refreshRecommendations');b.click();b.click();b.click();});
+ await page.waitForFunction(()=>Inicio.view.recommendationPage===2&&document.getElementById('refreshRecommendations').getAttribute('aria-busy')==='false');
+ const secondBatch=await page.evaluate(()=>Inicio.view.picks.map(p=>p.type+':'+p.id));assert(secondBatch.every(id=>!firstBatch.includes(id)));
+ assert.deepEqual(discoverPages,[1,1,2,2],'Exactly one request pair per batch');
+ failDiscover=true;await page.keyboard.press('Enter');await page.waitForFunction(()=>document.getElementById('refreshRecommendations').getAttribute('aria-busy')==='false');
+ assert.deepEqual(await page.evaluate(()=>Inicio.view.picks.map(p=>p.type+':'+p.id)),secondBatch);
+ assert.equal(await page.evaluate(()=>Inicio.view.recommendationPage),2);assert((await page.locator('#recommendationInfo').innerText()).includes('Sin actualizar'));
+ failDiscover=false;await page.reload();await page.waitForFunction(()=>Inicio.view.recommendationPage===2&&Inicio.view.picks.length===16);
+ assert.equal(discoverPages.length,6,'Reload reuses cached page even after a failed next batch');
+ await page.locator('#refreshRecommendations').click();await page.waitForFunction(()=>Inicio.view.recommendationPage===3&&document.getElementById('refreshRecommendations').getAttribute('aria-busy')==='false');
+ await page.keyboard.press('Enter');await page.waitForFunction(()=>Inicio.view.recommendationPage===1&&document.getElementById('refreshRecommendations').getAttribute('aria-busy')==='false');
+ assert.deepEqual(await page.evaluate(()=>Inicio.view.picks.map(p=>p.type+':'+p.id)),firstBatch,'Wraps at the common page limit');
  await page.locator('#live').click();assert.equal(await page.evaluate(()=>__launches.at(-1)),'com.webos.app.livetv');
  // Safety: opening or cancelling power confirmation must never shut anything down.
  await page.locator('#settings').click();await page.getByRole('button',{name:'Apagar por completo',exact:true}).click();
@@ -165,6 +195,6 @@ let browser,server;
  assert.equal(await noroot.evaluate(()=>__calls.some(c=>c.includes('hbchannel'))),false);
  assert.equal(nonrootErrors.length,0,nonrootErrors.join('\n'));await noroot.close();
  assert.equal(errors.length,0,errors.join('\n'));
- console.log(JSON.stringify({result:'PASS',checks:['two screens','shared weather/clock/live/settings header','10 movies + 6 series','ES providers','manual carousel','automatic carousel and focus pause','official local icons','three physical HDMI inputs','all-app grid scrolling','first-app-style shelf toggling/reordering','persistent preferences','cache','live TV launch','no unconfirmed poweroff','poweroff only after explicit confirmation in MOCK','cinematic details and cached metadata','synopsis scroll and focus restoration','six hourly and five daily forecasts','weather stale fallback and C/F conversion','non-root manual and public catalogs','zero privileged calls in non-root mode'],rendererErrors:errors.length,providerLookups:requests.filter(p=>p.endsWith('/watch/providers')).length},null,2));
+ console.log(JSON.stringify({result:'PASS',checks:['two screens','shared weather/clock/live/settings header','10 movies + 6 series','ES providers','manual carousel','automatic carousel and focus pause','official local icons','three physical HDMI inputs','all-app grid scrolling','first-app-style shelf toggling/reordering','persistent preferences','cache','live TV launch','no unconfirmed poweroff','poweroff only after explicit confirmation in MOCK','cinematic details and cached metadata','synopsis scroll and focus restoration','six hourly and five daily forecasts','weather stale fallback and C/F conversion','non-root manual and public catalogs','zero privileged calls in non-root mode','new package ID excludes both launchers from catalog','light/dark details','1/3/6/8 centered favorites','remote refresh pagination/cache/wrap/failure/concurrency'],rendererErrors:errors.length,providerLookups:requests.filter(p=>p.endsWith('/watch/providers')).length},null,2));
  await browser.close();await server.close();
 })().catch(async error=>{console.error(error);if(browser)await browser.close();if(server)await server.close();process.exitCode=1;});
